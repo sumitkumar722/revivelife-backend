@@ -35,6 +35,11 @@ app.post("/appointments", (req, res) => {
   });
 });
 
+app.get("/appointments", (req, res) => {
+  const data = fs.readFileSync("./data/appointments.json");
+  res.json(JSON.parse(data));
+});
+
 app.listen(PORT, () => {
   console.log('Server started on port ${PORT}');
 });
