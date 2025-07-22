@@ -1,32 +1,39 @@
 const express = require("express");
 const fs = require("fs");
 const cors = require("cors");
+const helmet = require("helmet");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// Middleware
+app.use(helmet());
+app.use(cors({
+  origin: 'https://sumitkumar722.github.io',
+}));
 app.use(express.json());
 
-const DATA_FILE = "./data/appointments.json";
+// Route
+app.get("/", (req, res) => {
+  res.send("ReviveLife Backend Running");
+});
 
+// POST appointment
 app.post("/appointments", (req, res) => {
   const newAppointment = req.body;
 
-  fs.readFile(DATA_FILE, "utf8", (err, data) => {
-    const appointments = data ? JSON.parse(data) : [];
+  fs.readFile("./data/appointments.json", "utf8", (err, data) => {
+    if (err) return res.status(500).send("Error reading appointments data");
+
+    const appointments = JSON.parse(data);
     appointments.push(newAppointment);
 
-    fs.writeFile(DATA_FILE, JSON.stringify(appointments, null, 2), (err) => {
-      if (err) return res.status(500).send("Error saving data.");
-      res.status(200).send("Appointment saved.");
+    fs.writeFile("./data/appointments.json", JSON.stringify(appointments, null, 2), err => {
+      if (err) return res.status(500).send("Error saving appointment");
+      res.status(200).send("Appointment saved successfully");
     });
   });
 });
 
-app.get("/", (req, res) => {
-  res.send("ReviveLife Backend is Running");
-});
-
 app.listen(PORT, () => {
-  console.log('Server running on port ${PORT}');
+  console.log('Server started on port ${PORT}');
 });
