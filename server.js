@@ -7,6 +7,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(helmet());
+const cors=require('cors');
 app.use(cors({
   origin: 'https://sumitkumar722.github.io',
 }));
