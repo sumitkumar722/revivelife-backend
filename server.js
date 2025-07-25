@@ -1,45 +1,52 @@
 const express = require("express");
 const fs = require("fs");
+const path = require("path");
 const cors = require("cors");
-const helmet = require("helmet");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(helmet());
-const cors=require('cors');
-app.use(cors({
-  origin: 'https://sumitkumar722.github.io',
-}));
+app.use(cors());
 app.use(express.json());
 
-// Route
-app.get("/", (req, res) => {
-  res.send("ReviveLife Backend Running");
-});
+const DATA_FILE = path.join(__dirname, "data", "appointments.json");
 
-// POST appointment
+// Ensure data folder exists
+if (!fs.existsSync(path.join(__dirname, "data"))) {
+  fs.mkdirSync(path.join(__dirname, "data"));
+}
+
+// Ensure appointments.json exists
+if (!fs.existsSync(DATA_FILE)) {
+  fs.writeFileSync(DATA_FILE, "[]");
+}
+
+// 🔹 POST: Save new appointment
 app.post("/appointments", (req, res) => {
   const newAppointment = req.body;
 
-  fs.readFile("./data/appointments.json", "utf8", (err, data) => {
-    if (err) return res.status(500).send("Error reading appointments data");
+  fs.readFile(DATA_FILE, "utf8", (err, data) => {
+    if (err) return res.status(500).send("Server error");
 
     const appointments = JSON.parse(data);
     appointments.push(newAppointment);
 
-    fs.writeFile("./data/appointments.json", JSON.stringify(appointments, null, 2), err => {
+    fs.writeFile(DATA_FILE, JSON.stringify(appointments, null, 2), err => {
       if (err) return res.status(500).send("Error saving appointment");
       res.status(200).send("Appointment saved successfully");
     });
   });
 });
 
+// 🔹 GET: Fetch all appointments
 app.get("/appointments", (req, res) => {
-  const data = fs.readFileSync("./data/appointments.json");
-  res.json(JSON.parse(data));
+  fs.readFile(DATA_FILE, "utf8", (err, data) => {
+    if (err) return res.status(500).send("Error loading appointments");
+    res.json(JSON.parse(data));
+  });
 });
 
+// 🔹 Start the server
 app.listen(PORT, () => {
-  console.log('Server started on port ${PORT}');
+  console.log('Server running at http://localhost:${PORT}');
 });
