@@ -50,3 +50,12 @@ app.get("/appointments", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+app.post('/admin-login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (username === "Seth_sumitsoni" && password === "@31January") {
+    res.json({ success: true });
+  } else {
+    res.json({ success: false, message: "Invalid credentials" });
+  }
+});
