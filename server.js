@@ -1,6 +1,5 @@
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
+const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
@@ -9,63 +8,48 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// 📁 Path to data file
-const DATA_FOLDER = path.join(__dirname, "data");
-const DATA_FILE = path.join(DATA_FOLDER, "appointments.json");
+//  MongoDB Connection
+mongoose.connect("mongodb+srv://mrsumitkumar722:cLhI7ah9p9DchYqg@cluster0.zoc1n9k.mongodb.net/appointmentsDB?retryWrites=true&w=majority&appName=Cluster0", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log(" MongoDB Connected"))
+.catch((err) => console.error(" MongoDB Connection Error:", err));
 
-// 🛠 Ensure data folder and file exist
-if (!fs.existsSync(DATA_FOLDER)) {
-  fs.mkdirSync(DATA_FOLDER);
-}
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, "[]");
-}
-
-// ✅ POST: Save new appointment (append to file)
-app.post("/appointments", (req, res) => {
-  const newAppointment = req.body;
-
-  fs.readFile(DATA_FILE, "utf8", (err, data) => {
-    let appointments = [];
-
-    if (!err && data) {
-      try {
-        appointments = JSON.parse(data);
-      } catch (e) {
-        console.error("JSON parse error:", e);
-        return res.status(500).send("Corrupted data file");
-      }
-    }
-
-    appointments.push(newAppointment);
-
-    fs.writeFile(DATA_FILE, JSON.stringify(appointments, null, 2), (err) => {
-      if (err) {
-        console.error("Write error:", err);
-        return res.status(500).send("Error saving appointment");
-      }
-
-      res.status(200).send("Appointment saved successfully");
-    });
-  });
+//  Appointment Schema & Model
+const appointmentSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  date: String,
+  message: String
 });
 
-// ✅ GET: Fetch all appointments
-app.get("/appointments", (req, res) => {
-  fs.readFile(DATA_FILE, "utf8", (err, data) => {
-    if (err) return res.status(500).send("Error loading appointments");
+const Appointment = mongoose.model("Appointment", appointmentSchema);
 
-    try {
-      const appointments = JSON.parse(data);
-      res.json(appointments);
-    } catch (e) {
-      console.error("JSON error:", e);
-      res.status(500).send("Invalid data format");
-    }
-  });
+//  POST: Save appointment to MongoDB
+app.post("/appointments", async (req, res) => {
+  try {
+    const newAppointment = new Appointment(req.body);
+    await newAppointment.save();
+    res.status(200).send(" Appointment saved to MongoDB");
+  } catch (err) {
+    console.error(" MongoDB Save Error:", err);
+    res.status(500).send(" Failed to save appointment");
+  }
 });
 
-// ✅ Admin Login
+//  GET: Fetch appointments from MongoDB
+app.get("/appointments", async (req, res) => {
+  try {
+    const appointments = await Appointment.find();
+    res.json(appointments);
+  } catch (err) {
+    console.error(" MongoDB Fetch Error:", err);
+    res.status(500).send(" Failed to fetch appointments");
+  }
+});
+
+// Admin Login
 app.post("/admin-login", (req, res) => {
   const { username, password } = req.body;
 
@@ -76,7 +60,7 @@ app.post("/admin-login", (req, res) => {
   }
 });
 
-// ✅ Start server
+// tart Server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  console.log( `Server running at http://localhost:${PORT}`);
 });
